@@ -1,35 +1,37 @@
 {
-  "name": "liffy",
-  "version": "0.1.0",
-  "description": "Split llms-full.txt into individual markdown files",
-  "type": "module",
-  "bin": {
-    "liffy": "./index.ts"
-  },
-  "files": [
-    "index.ts",
-    "src"
-  ],
-  "scripts": {
-    "test": "bun test",
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [
-    "llms",
-    "llms-full",
-    "markdown",
-    "splitter",
-    "ai",
-    "docs"
-  ],
-  "license": "MIT",
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  },
-  "engines": {
-    "bun": ">=1.0.0"
-  }
+	"name": "liffy",
+	"version": "0.1.0",
+	"description": "Split llms-full.txt into individual markdown files",
+	"type": "module",
+	"bin": {
+		"liffy": "./index.ts"
+	},
+	"files": [
+		"index.ts",
+		"src"
+	],
+	"scripts": {
+		"test": "bun test",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check --write"
+	},
+	"keywords": [
+		"llms",
+		"llms-full",
+		"markdown",
+		"splitter",
+		"ai",
+		"docs"
+	],
+	"license": "MIT",
+	"devDependencies": {
+		"@biomejs/biome": "2.3.11",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"engines": {
+		"bun": ">=1.0.0"
+	}
 }

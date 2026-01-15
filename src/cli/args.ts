@@ -4,80 +4,80 @@
  */
 
 export interface ParsedArgs {
-  command: string | null;
-  positionals: string[];
-  options: Record<string, string | boolean>;
+	command: string | null;
+	positionals: string[];
+	options: Record<string, string | boolean>;
 }
 
 const BOOLEAN_FLAGS = new Set(["help", "version", "debug", "h", "v", "d"]);
 
 function parseBoolean(value: string): boolean {
-  const normalized = value.trim().toLowerCase();
-  if (["1", "true", "yes", "y", "on"].includes(normalized)) return true;
-  if (["0", "false", "no", "n", "off"].includes(normalized)) return false;
-  return true;
+	const normalized = value.trim().toLowerCase();
+	if (["1", "true", "yes", "y", "on"].includes(normalized)) return true;
+	if (["0", "false", "no", "n", "off"].includes(normalized)) return false;
+	return true;
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
-  const positionals: string[] = [];
-  const options: Record<string, string | boolean> = {};
-  let command: string | null = null;
+	const positionals: string[] = [];
+	const options: Record<string, string | boolean> = {};
+	let command: string | null = null;
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === undefined) continue;
+	for (let i = 0; i < argv.length; i++) {
+		const arg = argv[i];
+		if (arg === undefined) continue;
 
-    if (arg.startsWith("--")) {
-      // --key=value or --key value or --flag
-      const eqIndex = arg.indexOf("=");
-      if (eqIndex !== -1) {
-        const key = arg.slice(2, eqIndex);
-        const value = arg.slice(eqIndex + 1);
-        options[key] = BOOLEAN_FLAGS.has(key) ? parseBoolean(value) : value;
-      } else {
-        const key = arg.slice(2);
-        if (BOOLEAN_FLAGS.has(key)) {
-          options[key] = true;
-        } else {
-          const next = argv[i + 1];
-          if (next && !next.startsWith("-")) {
-            options[key] = next;
-            i++;
-          } else {
-            options[key] = true;
-          }
-        }
-      }
-    } else if (arg.startsWith("-") && arg.length === 2) {
-      // -k value or -f (flag)
-      const key = arg.slice(1);
-      if (BOOLEAN_FLAGS.has(key)) {
-        options[key] = true;
-      } else {
-        const next = argv[i + 1];
-        if (next && !next.startsWith("-")) {
-          options[key] = next;
-          i++;
-        } else {
-          options[key] = true;
-        }
-      }
-    } else {
-      // Positional argument
-      if (command === null && !arg.includes("/") && !arg.includes(".")) {
-        // First non-option without path chars is likely a command
-        command = arg;
-      } else {
-        positionals.push(arg);
-      }
-    }
-  }
+		if (arg.startsWith("--")) {
+			// --key=value or --key value or --flag
+			const eqIndex = arg.indexOf("=");
+			if (eqIndex !== -1) {
+				const key = arg.slice(2, eqIndex);
+				const value = arg.slice(eqIndex + 1);
+				options[key] = BOOLEAN_FLAGS.has(key) ? parseBoolean(value) : value;
+			} else {
+				const key = arg.slice(2);
+				if (BOOLEAN_FLAGS.has(key)) {
+					options[key] = true;
+				} else {
+					const next = argv[i + 1];
+					if (next && !next.startsWith("-")) {
+						options[key] = next;
+						i++;
+					} else {
+						options[key] = true;
+					}
+				}
+			}
+		} else if (arg.startsWith("-") && arg.length === 2) {
+			// -k value or -f (flag)
+			const key = arg.slice(1);
+			if (BOOLEAN_FLAGS.has(key)) {
+				options[key] = true;
+			} else {
+				const next = argv[i + 1];
+				if (next && !next.startsWith("-")) {
+					options[key] = next;
+					i++;
+				} else {
+					options[key] = true;
+				}
+			}
+		} else {
+			// Positional argument
+			if (command === null && !arg.includes("/") && !arg.includes(".")) {
+				// First non-option without path chars is likely a command
+				command = arg;
+			} else {
+				positionals.push(arg);
+			}
+		}
+	}
 
-  return { command, positionals, options };
+	return { command, positionals, options };
 }
 
 export function showHelp(): void {
-  console.log(`liffy - Split llms-full.txt into individual markdown files
+	console.log(`liffy - Split llms-full.txt into individual markdown files
 
 Usage:
   liffy <input> [output-dir]       Split input file (default: current dir)
