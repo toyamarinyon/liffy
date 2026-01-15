@@ -1,0 +1,65 @@
+# Concepts
+Source: https://axiom.co/docs/ai-engineering/concepts
+
+Learn about the core concepts in AI engineering: Capabilities, Collections, Evals, Scorers, Annotations, and User Feedback.
+
+This page defines the core terms used in the AI engineering workflow. Understanding these concepts is the first step toward building robust and reliable generative AI capabilities.
+
+## AI engineering lifecycle
+
+The concepts in AI engineering are best understood within the context of the development lifecycle.
+
+### Capability
+
+A generative AI capability is a system that uses large language models to perform a specific task.
+
+## What's next?
+
+Now that you understand the core concepts, get started with the [Quickstart](/ai-engineering/quickstart).
+
+
+# Create
+Source: https://axiom.co/docs/ai-engineering/create
+
+Build AI capabilities using any framework, with best support for TypeScript-based tools.
+
+## Build your capability
+
+Define your capability using your framework of choice:
+
+```ts src/lib/capabilities/classify-ticket.ts
+import { generateObject } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+// This comment has # symbols that should NOT trigger splits
+// # Not a title
+// Source: not a real source
+
+export async function classifyTicket(input: { 
+  subject?: string; 
+  content: string 
+}) {
+  const result = await generateObject({
+    model: openai('gpt-4o-mini'),
+    messages: [
+      {
+        role: 'system',
+        content: 'Classify support tickets as: question, bug_report, or feature_request.',
+      },
+    ],
+  });
+  return result.object;
+}
+```
+
+## What's next?
+
+Once you have a working capability, systematically evaluate its performance.
+
+
+# Evaluation overview
+Source: https://axiom.co/docs/ai-engineering/evaluate/overview
+
+Systematically measure and improve your AI capabilities through offline evaluation.
+
+Evaluation is the systematic process of measuring how well your AI capability performs.

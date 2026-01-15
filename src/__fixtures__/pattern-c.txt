@@ -1,0 +1,102 @@
+# Anthropic Developer Documentation - Full Content
+
+This file provides comprehensive documentation with full rendered content.
+
+## Root URL
+
+Claude Developer Platform Console (Requires login)
+
+https://platform.claude.com
+
+## Available Languages on Website
+
+The full documentation is available in multiple languages.
+
+---
+
+# English Documentation - Full Content
+
+## Developer Guide
+
+### First steps
+
+---
+
+# Get started with Claude
+
+URL: https://platform.claude.com/docs/en/get-started
+
+# Get started with Claude
+
+Make your first API call to Claude and build a simple web search assistant
+
+---
+
+## Prerequisites
+
+- An Anthropic [Console account](/)
+- An [API key](/settings/keys)
+
+## Call the API
+
+```bash
+export ANTHROPIC_API_KEY='your-api-key-here'
+```
+
+Make your first API call:
+
+```bash
+curl https://api.anthropic.com/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: $ANTHROPIC_API_KEY" \
+  -d '{
+    "model": "claude-sonnet-4-5",
+    "max_tokens": 1000,
+    "messages": [
+      {
+        "role": "user", 
+        "content": "What should I search for?"
+      }
+    ]
+  }'
+```
+
+# API Reference
+
+URL: https://platform.claude.com/docs/en/api-reference
+
+# API Reference
+
+Full API reference documentation for the Anthropic API.
+
+## Endpoints
+
+### Messages API
+
+The Messages API is the primary way to interact with Claude.
+
+```python
+# Example code block with # characters
+# This should not trigger a split
+import anthropic
+
+client = anthropic.Anthropic()
+message = client.messages.create(
+    model="claude-sonnet-4-5",
+    max_tokens=1024,
+    messages=[{"role": "user", "content": "Hello!"}]
+)
+```
+
+# SDK Overview
+
+URL: https://platform.claude.com/docs/en/sdk
+
+# SDK Overview
+
+Official SDKs for interacting with the Anthropic API.
+
+## Available SDKs
+
+- Python SDK
+- TypeScript SDK
