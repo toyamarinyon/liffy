@@ -67,27 +67,27 @@ describe("split - Pattern A", () => {
   });
 
   it("extracts titles correctly", () => {
-    expect(result.pages[0].title).toBe("Concepts");
-    expect(result.pages[1].title).toBe("Create");
-    expect(result.pages[2].title).toBe("Evaluation overview");
+    expect(result.pages[0]?.title).toBe("Concepts");
+    expect(result.pages[1]?.title).toBe("Create");
+    expect(result.pages[2]?.title).toBe("Evaluation overview");
   });
 
   it("extracts URLs correctly", () => {
-    expect(result.pages[0].url).toBe(
+    expect(result.pages[0]?.url).toBe(
       "https://axiom.co/docs/ai-engineering/concepts"
     );
-    expect(result.pages[1].url).toBe(
+    expect(result.pages[1]?.url).toBe(
       "https://axiom.co/docs/ai-engineering/create"
     );
-    expect(result.pages[2].url).toBe(
+    expect(result.pages[2]?.url).toBe(
       "https://axiom.co/docs/ai-engineering/evaluate/overview"
     );
   });
 
   it("generates correct output paths", () => {
-    expect(result.pages[0].outputPath).toBe("docs/ai-engineering/concepts.md");
-    expect(result.pages[1].outputPath).toBe("docs/ai-engineering/create.md");
-    expect(result.pages[2].outputPath).toBe(
+    expect(result.pages[0]?.outputPath).toBe("docs/ai-engineering/concepts.md");
+    expect(result.pages[1]?.outputPath).toBe("docs/ai-engineering/create.md");
+    expect(result.pages[2]?.outputPath).toBe(
       "docs/ai-engineering/evaluate/overview.md"
     );
   });
@@ -114,32 +114,32 @@ describe("split - Pattern B", () => {
   });
 
   it("extracts titles from frontmatter", () => {
-    expect(result.pages[0].title).toBe("404 - Page Not Found | Cloudflare Docs");
-    expect(result.pages[1].title).toBe(
+    expect(result.pages[0]?.title).toBe("404 - Page Not Found | Cloudflare Docs");
+    expect(result.pages[1]?.title).toBe(
       "1.1.1.1 (DNS Resolver) · Cloudflare 1.1.1.1 docs"
     );
-    expect(result.pages[2].title).toBe("Agents · Cloudflare Agents docs");
+    expect(result.pages[2]?.title).toBe("Agents · Cloudflare Agents docs");
   });
 
   it("extracts URLs from source_url.html", () => {
-    expect(result.pages[0].url).toBe("https://developers.cloudflare.com/404/");
-    expect(result.pages[1].url).toBe(
+    expect(result.pages[0]?.url).toBe("https://developers.cloudflare.com/404/");
+    expect(result.pages[1]?.url).toBe(
       "https://developers.cloudflare.com/1.1.1.1/"
     );
-    expect(result.pages[2].url).toBe(
+    expect(result.pages[2]?.url).toBe(
       "https://developers.cloudflare.com/agents/"
     );
   });
 
   it("generates correct output paths", () => {
-    expect(result.pages[0].outputPath).toBe("404.md");
-    expect(result.pages[1].outputPath).toBe("1.1.1.1.md");
-    expect(result.pages[2].outputPath).toBe("agents.md");
+    expect(result.pages[0]?.outputPath).toBe("404.md");
+    expect(result.pages[1]?.outputPath).toBe("1.1.1.1.md");
+    expect(result.pages[2]?.outputPath).toBe("agents.md");
   });
 
   it("preserves frontmatter in content", () => {
-    expect(result.pages[0].content).toContain("---");
-    expect(result.pages[0].content).toContain("title: 404 - Page Not Found");
+    expect(result.pages[0]?.content).toContain("---");
+    expect(result.pages[0]?.content).toContain("title: 404 - Page Not Found");
   });
 });
 
@@ -156,27 +156,27 @@ describe("split - Pattern C", () => {
   });
 
   it("extracts titles correctly", () => {
-    expect(result.pages[0].title).toBe("Get started with Claude");
-    expect(result.pages[1].title).toBe("API Reference");
-    expect(result.pages[2].title).toBe("SDK Overview");
+    expect(result.pages[0]?.title).toBe("Get started with Claude");
+    expect(result.pages[1]?.title).toBe("API Reference");
+    expect(result.pages[2]?.title).toBe("SDK Overview");
   });
 
   it("extracts URLs correctly", () => {
-    expect(result.pages[0].url).toBe(
+    expect(result.pages[0]?.url).toBe(
       "https://platform.claude.com/docs/en/get-started"
     );
-    expect(result.pages[1].url).toBe(
+    expect(result.pages[1]?.url).toBe(
       "https://platform.claude.com/docs/en/api-reference"
     );
-    expect(result.pages[2].url).toBe(
+    expect(result.pages[2]?.url).toBe(
       "https://platform.claude.com/docs/en/sdk"
     );
   });
 
   it("generates correct output paths", () => {
-    expect(result.pages[0].outputPath).toBe("docs/en/get-started.md");
-    expect(result.pages[1].outputPath).toBe("docs/en/api-reference.md");
-    expect(result.pages[2].outputPath).toBe("docs/en/sdk.md");
+    expect(result.pages[0]?.outputPath).toBe("docs/en/get-started.md");
+    expect(result.pages[1]?.outputPath).toBe("docs/en/api-reference.md");
+    expect(result.pages[2]?.outputPath).toBe("docs/en/sdk.md");
   });
 
   it("does not split on # inside code blocks", () => {

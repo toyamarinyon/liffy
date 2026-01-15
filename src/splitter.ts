@@ -31,6 +31,7 @@ export function detectPattern(content: string): FormatPattern {
 
   for (let i = 0; i < lines.length - 2; i++) {
     const line = lines[i];
+    if (line === undefined) continue;
     if (line.startsWith("# ")) {
       const nextLine = lines[i + 1];
       const lineAfter = lines[i + 2];
@@ -89,6 +90,7 @@ function isInsideCodeBlock(lines: string[], lineIndex: number): boolean {
 
   for (let i = 0; i < lineIndex; i++) {
     const line = lines[i];
+    if (line === undefined) continue;
     if (line.startsWith("```")) {
       inCodeBlock = !inCodeBlock;
     }
@@ -108,6 +110,7 @@ function splitPatternA(content: string): Page[] {
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    if (line === undefined) continue;
     const nextLine = lines[i + 1];
 
     // Check for page boundary: # Title followed by Source:
@@ -162,27 +165,31 @@ function splitPatternB(content: string): Page[] {
   let match;
 
   while ((match = pageRegex.exec(content)) !== null) {
-    const pageContent = match[1].trim();
+    const matchedContent = match[1];
+    if (matchedContent === undefined) continue;
+    const pageContent = matchedContent.trim();
 
     // Parse frontmatter
     const frontmatterMatch = pageContent.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
 
     if (frontmatterMatch) {
       const frontmatter = frontmatterMatch[1];
-      const body = frontmatterMatch[2].trim();
+      const bodyRaw = frontmatterMatch[2];
+      if (frontmatter === undefined || bodyRaw === undefined) continue;
+      const body = bodyRaw.trim();
 
       // Extract title
       const titleMatch = frontmatter.match(/^title:\s*(.+)$/m);
-      const title = titleMatch ? titleMatch[1].trim() : "Untitled";
+      const title = titleMatch?.[1]?.trim() ?? "Untitled";
 
       // Extract source URL (html or md)
       let url = "";
       const htmlUrlMatch = frontmatter.match(/^\s*html:\s*(.+)$/m);
       const mdUrlMatch = frontmatter.match(/^\s*md:\s*(.+)$/m);
 
-      if (htmlUrlMatch) {
+      if (htmlUrlMatch?.[1]) {
         url = htmlUrlMatch[1].trim();
-      } else if (mdUrlMatch) {
+      } else if (mdUrlMatch?.[1]) {
         url = mdUrlMatch[1].trim();
       }
 
@@ -211,6 +218,7 @@ function splitPatternC(content: string): Page[] {
 
   for (let i = 0; i < lines.length - 2; i++) {
     const line = lines[i];
+    if (line === undefined) continue;
     const nextLine = lines[i + 1];
     const lineAfter = lines[i + 2];
 

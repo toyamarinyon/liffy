@@ -1,12 +1,35 @@
 {
   "name": "liffy",
-  "module": "index.ts",
+  "version": "0.1.0",
+  "description": "Split llms-full.txt into individual markdown files",
   "type": "module",
-  "private": true,
+  "bin": {
+    "liffy": "./index.ts"
+  },
+  "files": [
+    "index.ts",
+    "src"
+  ],
+  "scripts": {
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "llms",
+    "llms-full",
+    "markdown",
+    "splitter",
+    "ai",
+    "docs"
+  ],
+  "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest"
   },
   "peerDependencies": {
     "typescript": "^5"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
   }
 }
