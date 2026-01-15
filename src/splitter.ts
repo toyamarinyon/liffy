@@ -329,7 +329,10 @@ function splitPatternD(content: string, debug?: DebugLogger): Page[] {
   }
   logDebug(debug, `pattern-d dash lines: ${dashIndices.length}`);
   if (dashIndices.length > 0) {
-    logDebug(debug, `pattern-d first dash line at line ${dashIndices[0] + 1}`);
+    const firstDashIndex = dashIndices[0];
+    if (firstDashIndex !== undefined) {
+      logDebug(debug, `pattern-d first dash line at line ${firstDashIndex + 1}`);
+    }
   }
 
   // Process pairs: (metadata start, metadata end) -> content until next metadata start

@@ -18,6 +18,7 @@
 - [x] splitの診断ログ用に`--debug/-d`を追加
 - [x] `--debug/-d`がURLを誤消費しないよう引数パースを修正
 - [x] Pattern D検出を優先し、`<page>`の誤検出を回避
+- [x] typecheckエラー（dash lineログのundefined）を修正
 
 ## Next
 
