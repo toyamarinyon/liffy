@@ -1,7 +1,32 @@
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
+import {
+	ensureLiffyAgents,
+	ensureRootAgentsSnippet,
+	getRootAgentsSnippet,
+	maybeGetFirstRunHints,
+	resolveLiffyRoot,
+} from "../../agents.js";
 import { buildIndexJson } from "../../index-json.js";
 import { type Page, split } from "../../splitter.js";
+
+const ANSI = {
+	reset: "\x1b[0m",
+	bold: "\x1b[1m",
+	dim: "\x1b[2m",
+	green: "\x1b[32m",
+	cyan: "\x1b[36m",
+	yellow: "\x1b[33m",
+};
+
+const useColor = Boolean(process.stdout.isTTY && !process.env.NO_COLOR);
+
+function style(text: string, ...codes: string[]): string {
+	if (!useColor || codes.length === 0) {
+		return text;
+	}
+	return `${codes.join("")}${text}${ANSI.reset}`;
+}
 
 export interface SplitOptions {
 	input: string;
@@ -16,6 +41,40 @@ function isUrl(input: string): boolean {
 function urlToOutputDir(url: string): string {
 	const parsed = new URL(url);
 	return join("liffy", parsed.host);
+}
+
+function formatPath(targetPath: string): string {
+	const resolved = resolve(process.cwd(), targetPath);
+	const rel = relative(process.cwd(), resolved);
+	if (!rel.startsWith("..") && rel !== "") {
+		return rel;
+	}
+	return targetPath;
+}
+
+function okMark(): string {
+	return style("✓", ANSI.green, ANSI.bold);
+}
+
+function formatOk(message: string): string {
+	return `${okMark()} ${message}`;
+}
+
+function printSection(title: string, lines: string[]): void {
+	if (lines.length === 0) {
+		return;
+	}
+	const headerColor = title === "hint" ? ANSI.yellow : ANSI.cyan;
+	const header = `${style(title, ANSI.bold, headerColor)} ${style(
+		"--------------------",
+		ANSI.dim,
+	)}`;
+	console.log("");
+	console.log(header);
+	console.log("");
+	for (const line of lines) {
+		console.log(`    ${line}`);
+	}
 }
 
 function maybeFlattenOutputPaths(pages: Page[]): {
@@ -63,7 +122,7 @@ function maybeFlattenOutputPaths(pages: Page[]): {
 }
 
 async function fetchContent(url: string): Promise<string> {
-	console.log(`Fetching ${url}...`);
+	console.log(`\nFetching ${url}...`);
 
 	const response = await fetch(url);
 
@@ -112,11 +171,18 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 		process.exit(1);
 	}
 
-	console.log(`Detected format: ${result.pattern}`);
-	console.log(`Found ${adjusted.pages.length} pages`);
-	if (adjusted.flattenedRoot) {
-		console.log(`Flattened: removed "${adjusted.flattenedRoot}/" prefix`);
+	const outputDisplay = formatPath(outputDir);
+	const logLines: string[] = [];
+	const infoLines: string[] = [];
+	const hintLines: string[] = [];
+	if (options.debug) {
+		logLines.push(`  -> Detected: ${result.pattern}`);
 	}
+	let pagesLine = `  -> Pages: ${adjusted.pages.length}`;
+	if (options.debug && adjusted.flattenedRoot) {
+		pagesLine += ` (flattened from "${adjusted.flattenedRoot}/")`;
+	}
+	logLines.push(pagesLine);
 
 	// Write output files
 	let written = 0;
@@ -137,6 +203,40 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 	const indexPath = join(outputDir, "index.json");
 	await writeFile(indexPath, indexContent, "utf-8");
 
-	console.log(`Written ${written} files to ${outputDir}`);
-	console.log(`Index: ${indexPath}`);
+	const liffyRoot = resolveLiffyRoot(outputDir);
+	logLines.push(`  ${formatOk(`Saved to ${outputDisplay}`)}`);
+	if (options.debug) {
+		logLines.push(`  -> Index: ${formatPath(indexPath)}`);
+	}
+	if (liffyRoot) {
+		try {
+			const agentsUpdated = await ensureLiffyAgents(liffyRoot);
+			void agentsUpdated;
+
+			const rootUpdated = await ensureRootAgentsSnippet();
+			if (rootUpdated) {
+				infoLines.push(
+					formatOk(
+						`Updated ${formatPath("AGENTS.md")} (added liffy section)`,
+					),
+				);
+				infoLines.push("");
+				infoLines.push(...getRootAgentsSnippet().split("\n"));
+			}
+
+			const hints = await maybeGetFirstRunHints(liffyRoot);
+			if (hints.length > 0) {
+				hintLines.push(...hints);
+			}
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			console.warn(`Warning: failed to update AGENTS.md (${message})`);
+		}
+	}
+
+	for (const line of logLines) {
+		console.log(line);
+	}
+	printSection("info", infoLines);
+	printSection("hint", hintLines);
 }
