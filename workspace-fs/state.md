@@ -39,6 +39,7 @@
 - [x] Update agent awareness decision to match current implementation -> [./decisions/agent-awareness.md](./decisions/agent-awareness.md)
 - [x] Translate workspace docs to English
 - [x] Update README -> [./README.md](./README.md)
+- [x] Add publish workflow dispatch with version bump -> [./.github/workflows/publish.yml](./.github/workflows/publish.yml)
 
 ## Next
 
