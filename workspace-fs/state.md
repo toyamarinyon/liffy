@@ -37,10 +37,10 @@
 - [x] Limit bun test to src (root config) -> [./bunfig.toml](./bunfig.toml)
 - [x] Update agent awareness decision to match current implementation -> [./decisions/agent-awareness.md](./decisions/agent-awareness.md)
 - [x] Translate workspace docs to English
+- [x] Update README -> [./README.md](./README.md)
 
 ## Next
 
 - [ ] npm publish
-- [ ] Update README.md
 
 **Future plans:** see [roadmap.md](./roadmap.md)
