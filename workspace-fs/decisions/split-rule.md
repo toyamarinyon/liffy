@@ -1,8 +1,8 @@
-# llms-full.txt 分割ルール
+# llms-full.txt split rules
 
-## サンプル分析結果
+## Sample analysis results
 
-5つのサンプルを調査した結果、3つのフォーマットパターンを発見:
+After analyzing five samples, we found four format patterns:
 
 ### Pattern A: `# Title` + `Source:` (axiom.co, supabase.com)
 
@@ -10,17 +10,17 @@
 # Concepts
 Source: https://axiom.co/docs/ai-engineering/concepts
 
-コンテンツ...
+Content...
 
 # Create
 Source: https://axiom.co/docs/ai-engineering/create
 
-コンテンツ...
+Content...
 ```
 
-**分割ルール**: `^# ` で始まる行 + 次行が `^Source: ` の場合、新規ページ区切り
+**Split rule**: A line starting with `^# ` and the next line `^Source: ` marks a new page boundary
 
-### Pattern B: `<page>` タグ (cloudflare)
+### Pattern B: `<page>` tags (cloudflare)
 
 ```xml
 <page>
@@ -31,7 +31,7 @@ source_url:
   md: https://developers.cloudflare.com/404/index.md
 ---
 
-コンテンツ...
+Content...
 
 </page>
 
@@ -40,7 +40,7 @@ source_url:
 </page>
 ```
 
-**分割ルール**: `<page>` と `</page>` タグで囲まれたブロック
+**Split rule**: Blocks wrapped by `<page>` and `</page>` tags
 
 ### Pattern C: `# Title` + `URL:` (platform.claude.com)
 
@@ -51,54 +51,54 @@ URL: https://platform.claude.com/docs/en/get-started
 
 # Get started with Claude
 
-コンテンツ...
+Content...
 ```
 
-**分割ルール**: `^# ` で始まる行 + 空行 + `^URL: ` の場合、新規ページ区切り
+**Split rule**: A line starting with `^# `, a blank line, and then `^URL: ` marks a new page boundary
 
-### Pattern D: フラットMarkdown (modelcontextprotocol.io)
+### Pattern D: Flat Markdown (modelcontextprotocol.io)
 
 ```
 # Build an MCP client
 Source: https://modelcontextprotocol.io/docs/develop/build-client
 
-コンテンツ...
+Content...
 
 # Build an MCP server
 Source: https://modelcontextprotocol.io/docs/develop/build-server
 
-コンテンツ...
+Content...
 ```
 
-**分割ルール**: Pattern Aと同じ（`# Title` + `Source:`）
+**Split rule**: Same as Pattern A (`# Title` + `Source:`)
 
 ---
 
-## 統合分割アルゴリズム（案）
+## Unified split algorithm (draft)
 
 ```
-1. ファイル先頭を読み、フォーマット検出:
-   - `<page>` タグ存在 → Pattern B
-   - `# ` + `Source:` → Pattern A/D
-   - `# ` + 空行 + `URL:` → Pattern C
-   - それ以外 → Pattern A/D をデフォルトとして試行
+1. Read the file header and detect the format:
+   - `<page>` tag present -> Pattern B
+   - `# ` + `Source:` -> Pattern A/D
+   - `# ` + blank line + `URL:` -> Pattern C
+   - otherwise -> default to Pattern A/D
 
-2. 検出パターンに基づき分割:
-   - Pattern B: `<page>...</page>` でsplit
-   - Pattern A/D: `^# ` + 次行 `^Source:` で split
-   - Pattern C: `^# ` + (空行) + `^URL:` で split
+2. Split based on the detected pattern:
+   - Pattern B: split by `<page>...</page>`
+   - Pattern A/D: split at `^# ` + next line `^Source:`
+   - Pattern C: split at `^# ` + (blank line) + `^URL:`
 
-3. 各ページから出力パス生成:
-   - Source/URL からパス抽出
-   - ドメイン除去、`.md` 拡張子付与
-   - 例: `https://axiom.co/docs/ai-engineering/concepts` 
-         → `docs/ai-engineering/concepts.md`
+3. Generate output paths from each page:
+   - extract path from Source/URL
+   - remove domain, add `.md` extension
+   - example: `https://axiom.co/docs/ai-engineering/concepts`
+         -> `docs/ai-engineering/concepts.md`
 ```
 
 ---
 
-## 次のステップ
+## Next steps
 
-- [ ] 上記アルゴリズムの実装
-- [ ] エッジケース確認（コードブロック内の `# ` など）
-- [ ] supabase.com サンプルでもPattern A/Dが適用可能か確認
+- [ ] Implement the algorithm above
+- [ ] Check edge cases (e.g. `# ` inside code blocks)
+- [ ] Verify Pattern A/D applies to the supabase.com sample

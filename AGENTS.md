@@ -3,32 +3,37 @@
 liffy turns a monolithic `llmsfull.txt` into a tree of leaves — small, searchable files you can assemble into LLM context with standard Unix tools.
 
 
-## 参考になるもの
+## Helpful references
 
-インターネット上のテキストをファイルシステムに持ってくるという考え方は`vercel-labs/opensrc`も近いので、実装の参考になると思います。
+The idea of bringing internet text into the filesystem is similar to
+`vercel-labs/opensrc`, so it is a good implementation reference.
 
-`opensrc/repos/github.com/vercel-labs/opensrc` に実装があるので適宜確認してください。
+The implementation lives in `opensrc/repos/github.com/vercel-labs/opensrc`, so
+check it as needed.
 
 ## Our workspace
 
-`./.workspace-fs` ディレクトリは私たちの作業ファイルシステムです。検討中の仕様や、実装中のタスク、その他利用するライブラリ、フレームワークのドキュメントなどがあります。
+The `./.workspace-fs` directory is our working filesystem. It contains specs
+under discussion, tasks in progress, and docs for libraries/frameworks we use.
 
-### state.md について
+### About state.md
 
-[state.md](./workspace-fs/state.md) はこのプロダクトの現在の状態をまとめたファイルです。重要な意思決定や直近の開発タスクがまとまっています。
+[state.md](./workspace-fs/state.md) summarizes the current state of this
+product. It captures key decisions and recent development tasks.
 
-**ルール:**
-- タスクの進捗や検討結果は必ず `state.md` に反映する
-- `state.md` から関連ファイルへリンクを貼り、indexとして機能させる
+**Rules:**
+- Reflect task progress and conclusions in `state.md`
+- Link from `state.md` to related files so it serves as an index
 
-### scratchpads について
+### About scratchpads
 
-`workspace-fs/scratchpads/` は作業用メモ置き場です。人間がAIに依頼するための下準備や検討中の内容を置きます。
+`workspace-fs/scratchpads/` is a working notes area. Store prep materials or
+in-progress thinking for AI requests.
 
-**ルール:**
-- 検討が完了したら `workspace-fs/decisions/` に移動する
-- 移動時はファイル名を決定事項を表す名前に変更してもよい
-- `state.md` に決定事項へのリンクを更新する
+**Rules:**
+- When a discussion is finalized, move it to `workspace-fs/decisions/`
+- You may rename the file to reflect the decision
+- Update `state.md` with a link to the decision
 
 <!-- opensrc:start -->
 
