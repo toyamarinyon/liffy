@@ -34,7 +34,7 @@
 - [x] 初回実行時の info/hint 出力を簡潔に整形 → `src/cli/commands/split.ts`
 - [x] 初回統合の y/n プロンプトと許可制の更新 → `src/agents.ts`, `src/cli/commands/split.ts`
 - [x] okタスクのlint/typecheck/knip修正 → `src/agents.ts`, `src/cli/commands/split.ts`, `package.json`
-- [x] bun testのroot設定を追加 → [./bunfig.toml](./bunfig.toml)
+- [x] bun testをsrc配下に限定（root設定） → [./bunfig.toml](./bunfig.toml)
 
 ## Next
 
