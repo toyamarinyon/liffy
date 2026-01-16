@@ -4,7 +4,7 @@
 
 - [x] 分割アルゴリズム（Pattern A/B/C対応）
 - [x] CLI実装（split, list, remove, clean）
-- [ ] URL fetch対応
+- [x] URL fetch対応
 - [ ] npm publish
 
 ## v0.2
