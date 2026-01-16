@@ -2,7 +2,7 @@
 
 ## Decision
 
-- Ship `liffy` as a Node.js (>=20) CLI, not Bun-only.
+- Ship `llms-furl` as a Node.js (>=20) CLI, not Bun-only.
 - Build publishable output with `tsup` (esbuild) and publish `dist/`.
 - Remove Bun-specific runtime APIs (`Bun.argv`, `Bun.file`) in favor of Node APIs.
 - Keep ESM (`"type": "module"`) and point the npm `bin` to `dist/index.js`.

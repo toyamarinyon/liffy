@@ -1,6 +1,6 @@
 # AGENTS.md
 
-liffy turns a monolithic `llmsfull.txt` into a tree of leaves — small, searchable files you can assemble into LLM context with standard Unix tools.
+llms-furl turns a monolithic `llmsfull.txt` into a tree of leaves — small, searchable files you can assemble into LLM context with standard Unix tools.
 
 
 ## Helpful references
@@ -77,18 +77,18 @@ npx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
 
 <!-- opensrc:end -->
 
-<!-- liffy:start -->
+<!-- llms-furl:start -->
 
 ## llms-full reference
 
 When working on tasks about a library/framework/runtime/platform, first consult
-`liffy/`, which contains llms-full.txt split into a tree of leaves — small,
+`llms-furl/`, which contains llms-full.txt split into a tree of leaves — small,
 searchable files for quick lookup.
 
 Workflow:
-1. Check domains in `liffy/AGENTS.md`.
-2. Search within the relevant domain (e.g. `rg -n "keyword" liffy/bun.sh`).
+1. Check domains in `llms-furl/AGENTS.md`.
+2. Search within the relevant domain (e.g. `rg -n "keyword" llms-furl/bun.sh`).
 3. If needed, navigate with `index.json` using `jq`.
 4. If no relevant info is found, state that and then move on to other sources.
 
-<!-- liffy:end -->
+<!-- llms-furl:end -->

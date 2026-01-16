@@ -1,26 +1,26 @@
-# liffy
+# llms-furl
 
-liffy turns a monolithic `llms-full.txt` into a tree of leaves — small, searchable files you can assemble into LLM context with standard Unix tools.
+llms-furl turns a monolithic `llms-full.txt` into a tree of leaves — small, searchable files you can assemble into LLM context with standard Unix tools.
 
 Requirements: Node.js >= 20.
 
 ## Install
 
 ```bash
-npm install -g liffy
+npm install -g llms-furl
 # or one-off
-npx liffy --help
+npx llms-furl --help
 ```
 
 ## Quickstart
 
 ```bash
-liffy https://vercel.com/docs/llms-full.txt
-tree -L 3 liffy/vercel.com
+llms-furl https://vercel.com/docs/llms-full.txt
+tree -L 3 llms-furl/vercel.com
 ```
 
 ```text
-liffy/
+llms-furl/
 └── vercel.com
     ├── index.json
     ├── api/
@@ -42,13 +42,13 @@ Now you can use standard Unix tools to build exactly the context you need.
 
 ```bash
 # Find anything related to rate limits
-rg "rate" liffy/vercel.com/docs
+rg "rate" llms-furl/vercel.com/docs
 
 # Collect all API-related docs
-fd . liffy/vercel.com/docs/api | xargs cat
+fd . llms-furl/vercel.com/docs/api | xargs cat
 
 # Build a context for "file upload"
-rg -l "file upload" liffy/vercel.com/docs | xargs cat > context.txt
+rg -l "file upload" llms-furl/vercel.com/docs | xargs cat > context.txt
 ```
 
 Pipe that directly into your LLM:
@@ -64,12 +64,12 @@ Just files, trees, and pipes.
 ## Usage
 
 ```text
-liffy <input> [output-dir]
-liffy split <input> [output-dir]
-liffy list [output-dir]
-liffy remove <files...>
-liffy rm <files...>
-liffy clean [output-dir]
+llms-furl <input> [output-dir]
+llms-furl split <input> [output-dir]
+llms-furl list [output-dir]
+llms-furl remove <files...>
+llms-furl rm <files...>
+llms-furl clean [output-dir]
 ```
 
 Options:
@@ -79,15 +79,15 @@ Options:
 
 ## Output layout
 
-- URL input defaults to `liffy/<host>` (for example, `liffy/vercel.com`).
+- URL input defaults to `llms-furl/<host>` (for example, `llms-furl/vercel.com`).
 - File input defaults to the current directory unless `output-dir` is given.
 - Output file paths are derived from each page URL (strip leading/trailing slashes and `.md`/`.html`).
-- If all pages share one top-level directory (for example, `docs/`), liffy flattens it for URL inputs (shown in `--debug`).
+- If all pages share one top-level directory (for example, `docs/`), llms-furl flattens it for URL inputs (shown in `--debug`).
 - `index.json` is written alongside the output and contains a tree plus `source` (and `name` for URL inputs).
 
 ## Split patterns
 
-liffy detects common llms-full formats automatically:
+llms-furl detects common llms-full formats automatically:
 
 - Pattern A: `# Title` followed by `Source: https://...`
 - Pattern B: `<page>...</page>` with frontmatter containing `source_url`
@@ -98,13 +98,13 @@ Code blocks are ignored when detecting boundaries.
 
 ## Integration hints
 
-When output is inside `liffy/`, liffy maintains `liffy/AGENTS.md` and may offer to update:
+When output is inside `llms-furl/`, llms-furl maintains `llms-furl/AGENTS.md` and may offer to update:
 
-- `.gitignore` to ignore `liffy/`
-- `tsconfig.json` to exclude `liffy`
-- `AGENTS.md` to add a liffy section
+- `.gitignore` to ignore `llms-furl/`
+- `tsconfig.json` to exclude `llms-furl`
+- `AGENTS.md` to add a llms-furl section
 
-In TTY, you get a y/n prompt; in non-interactive runs it prints hints only. Consent is stored in `liffy/.liffy.json`.
+In TTY, you get a y/n prompt; in non-interactive runs it prints hints only. Consent is stored in `llms-furl/.llms-furl.json`.
 
-`liffy` lets you treat your LLM documentation the way Unix always wanted you to:
+`llms-furl` lets you treat your LLM documentation the way Unix always wanted you to:
 as a **living, searchable filesystem of knowledge**.

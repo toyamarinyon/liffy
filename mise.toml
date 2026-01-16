@@ -2,8 +2,8 @@
 bun = "latest"
 node = "latest"
 
-[tasks.reset-liffy]
-run = "rm -rf liffy"
+[tasks.reset-llms-furl]
+run = "rm -rf llms-furl"
 
 [tasks.ok]
 description = "Run format, typecheck, and knip checks"

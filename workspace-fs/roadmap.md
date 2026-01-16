@@ -13,11 +13,11 @@
   - Acts as a gateway
   - Caching (avoid re-fetching the same URL)
   - Telemetry (usage stats, popular docs, etc.)
-  - llms-full.txt registry: incrementally search with `liffy search`, then `liffy fetch` what you find
+  - llms-full.txt registry: incrementally search with `llms-furl search`, then `llms-furl fetch` what you find
 
 ## Future Ideas
 
-- [ ] `liffy update` - update existing split files to the latest version
-- [ ] `liffy search` - search within split files
+- [ ] `llms-furl update` - update existing split files to the latest version
+- [ ] `llms-furl search` - search within split files
 - [ ] Custom pattern definitions (user-defined split rules)
-- [ ] `.liffyrc` config file
+- [ ] `.llms-furlrc` config file

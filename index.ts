@@ -1,9 +1,9 @@
+import packageJson from "./package.json" with { type: "json" };
 import { parseArgs, showHelp } from "./src/cli/args.js";
 import { cleanCommand } from "./src/cli/commands/clean.js";
 import { listCommand } from "./src/cli/commands/list.js";
 import { removeCommand } from "./src/cli/commands/remove.js";
 import { splitCommand } from "./src/cli/commands/split.js";
-import packageJson from "./package.json" with { type: "json" };
 
 const args = parseArgs(process.argv.slice(2));
 const debug = Boolean(args.options.debug || args.options.d);

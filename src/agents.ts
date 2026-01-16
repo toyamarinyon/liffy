@@ -3,11 +3,11 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 
 const ROOT_AGENTS_FILE = "AGENTS.md";
-const LIFFY_ROOT = "liffy";
-const LIFFY_AGENTS_FILE = "AGENTS.md";
-const LIFFY_STATE_FILE = ".liffy.json";
-const SECTION_MARKER = "<!-- liffy:start -->";
-const SECTION_END_MARKER = "<!-- liffy:end -->";
+const LLMS_FURL_ROOT = "llms-furl";
+const LLMS_FURL_AGENTS_FILE = "AGENTS.md";
+const LLMS_FURL_STATE_FILE = ".llms-furl.json";
+const SECTION_MARKER = "<!-- llms-furl:start -->";
+const SECTION_END_MARKER = "<!-- llms-furl:end -->";
 
 type DomainEntry = {
 	name: string;
@@ -15,7 +15,7 @@ type DomainEntry = {
 	source?: string;
 };
 
-type LiffyState = {
+type LlmsFurlState = {
 	notices?: {
 		tsconfigExclude?: boolean;
 		gitignore?: boolean;
@@ -45,12 +45,12 @@ function getRootSectionContent(): string {
 ## llms-full reference
 
 When working on tasks about a library/framework/runtime/platform, first consult
-\`liffy/\`, which contains llms-full.txt split into a tree of leaves \u2014 small,
+\`llms-furl/\`, which contains llms-full.txt split into a tree of leaves \u2014 small,
 searchable files for quick lookup.
 
 Workflow:
-1. Check domains in \`liffy/AGENTS.md\`.
-2. Search within the relevant domain (e.g. \`rg -n "keyword" liffy/bun.sh\`).
+1. Check domains in \`llms-furl/AGENTS.md\`.
+2. Search within the relevant domain (e.g. \`rg -n "keyword" llms-furl/bun.sh\`).
 3. If needed, navigate with \`index.json\` using \`jq\`.
 4. If no relevant info is found, state that and then move on to other sources.
 
@@ -64,8 +64,8 @@ function extractSection(content: string): string | null {
 	return content.slice(startIdx, endIdx + SECTION_END_MARKER.length);
 }
 
-async function readLiffyState(liffyRoot: string): Promise<LiffyState> {
-	const statePath = join(liffyRoot, LIFFY_STATE_FILE);
+async function readLlmsFurlState(llmsFurlRoot: string): Promise<LlmsFurlState> {
+	const statePath = join(llmsFurlRoot, LLMS_FURL_STATE_FILE);
 	if (!existsSync(statePath)) {
 		return {};
 	}
@@ -75,35 +75,35 @@ async function readLiffyState(liffyRoot: string): Promise<LiffyState> {
 		if (!parsed || typeof parsed !== "object") {
 			return {};
 		}
-		return parsed as LiffyState;
+		return parsed as LlmsFurlState;
 	} catch {
 		return {};
 	}
 }
 
-async function writeLiffyState(
-	liffyRoot: string,
-	state: LiffyState,
+async function writeLlmsFurlState(
+	llmsFurlRoot: string,
+	state: LlmsFurlState,
 ): Promise<void> {
-	const statePath = join(liffyRoot, LIFFY_STATE_FILE);
+	const statePath = join(llmsFurlRoot, LLMS_FURL_STATE_FILE);
 	await writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf-8");
 }
 
 export async function getIntegrationConsent(
-	liffyRoot: string,
+	llmsFurlRoot: string,
 ): Promise<"granted" | "denied" | null> {
-	const state = await readLiffyState(liffyRoot);
+	const state = await readLlmsFurlState(llmsFurlRoot);
 	return state.integration?.consent ?? null;
 }
 
 export async function setIntegrationConsent(
-	liffyRoot: string,
+	llmsFurlRoot: string,
 	consent: "granted" | "denied",
 	applied: boolean,
 ): Promise<void> {
-	const state = await readLiffyState(liffyRoot);
+	const state = await readLlmsFurlState(llmsFurlRoot);
 	state.integration = { consent, applied };
-	await writeLiffyState(liffyRoot, state);
+	await writeLlmsFurlState(llmsFurlRoot, state);
 }
 
 async function hasTsconfigExclude(cwd: string): Promise<boolean> {
@@ -113,22 +113,22 @@ async function hasTsconfigExclude(cwd: string): Promise<boolean> {
 	}
 	try {
 		const raw = await readFile(tsconfigPath, "utf-8");
-		return raw.includes("liffy");
+		return raw.includes("llms-furl");
 	} catch {
 		return false;
 	}
 }
 
-function hasGitignoreLiffy(content: string): boolean {
+function hasGitignoreLlmsFurl(content: string): boolean {
 	for (const line of content.split(/\r?\n/)) {
 		const trimmed = line.trim();
 		if (!trimmed || trimmed.startsWith("#")) {
 			continue;
 		}
 		if (
-			trimmed === "liffy" ||
-			trimmed === "liffy/" ||
-			trimmed.startsWith("liffy/")
+			trimmed === "llms-furl" ||
+			trimmed === "llms-furl/" ||
+			trimmed.startsWith("llms-furl/")
 		) {
 			return true;
 		}
@@ -143,7 +143,7 @@ async function hasGitignoreEntry(cwd: string): Promise<boolean> {
 	}
 	try {
 		const raw = await readFile(gitignorePath, "utf-8");
-		return hasGitignoreLiffy(raw);
+		return hasGitignoreLlmsFurl(raw);
 	} catch {
 		return false;
 	}
@@ -262,7 +262,7 @@ function getLineIndentAt(text: string, index: number): string {
 }
 
 function buildTsconfigExcludeUpdate(raw: string): string | null {
-	if (raw.includes("liffy")) {
+	if (raw.includes("llms-furl")) {
 		return null;
 	}
 	const range = findExcludeArrayRange(raw);
@@ -280,7 +280,7 @@ function buildTsconfigExcludeUpdate(raw: string): string | null {
 		const trailing = arrayText.match(/\s*$/)?.[0] ?? "";
 		const suffix =
 			trimmed.length === 0 ? "" : trimmed.endsWith(",") ? "" : ", ";
-		const newArrayText = `${leading}${trimmed}${suffix}"liffy"${trailing}`;
+		const newArrayText = `${leading}${trimmed}${suffix}"llms-furl"${trailing}`;
 		return raw.slice(0, range.start + 1) + newArrayText + raw.slice(range.end);
 	}
 	let updatedArrayText = arrayText;
@@ -299,7 +299,7 @@ function buildTsconfigExcludeUpdate(raw: string): string | null {
 	}
 	const baseIndent = getLineIndentAt(raw, range.end);
 	const itemIndent = getLastLineIndent(updatedArrayText) ?? `${baseIndent}  `;
-	const insertion = `\n${itemIndent}"liffy"`;
+	const insertion = `\n${itemIndent}"llms-furl"`;
 	return (
 		raw.slice(0, range.start + 1) +
 		updatedArrayText +
@@ -308,17 +308,17 @@ function buildTsconfigExcludeUpdate(raw: string): string | null {
 	);
 }
 
-async function listDomains(liffyRoot: string): Promise<DomainEntry[]> {
-	if (!existsSync(liffyRoot)) {
+async function listDomains(llmsFurlRoot: string): Promise<DomainEntry[]> {
+	if (!existsSync(llmsFurlRoot)) {
 		return [];
 	}
 
-	const entries = await readdir(liffyRoot, { withFileTypes: true });
+	const entries = await readdir(llmsFurlRoot, { withFileTypes: true });
 	const domains: DomainEntry[] = [];
 
 	for (const entry of entries) {
 		if (!entry.isDirectory()) continue;
-		const indexPath = join(liffyRoot, entry.name, "index.json");
+		const indexPath = join(llmsFurlRoot, entry.name, "index.json");
 		if (!existsSync(indexPath)) continue;
 
 		let name = entry.name;
@@ -338,7 +338,7 @@ async function listDomains(liffyRoot: string): Promise<DomainEntry[]> {
 
 		domains.push({
 			name,
-			indexPath: `${LIFFY_ROOT}/${entry.name}/index.json`,
+			indexPath: `${LLMS_FURL_ROOT}/${entry.name}/index.json`,
 			source,
 		});
 	}
@@ -346,17 +346,17 @@ async function listDomains(liffyRoot: string): Promise<DomainEntry[]> {
 	return domains.sort((a, b) => a.name.localeCompare(b.name, "en"));
 }
 
-function renderLiffyAgents(domains: DomainEntry[]): string {
+function renderLlmsFurlAgents(domains: DomainEntry[]): string {
 	const lines: string[] = [
-		"# liffy/AGENTS.md",
+		"# llms-furl/AGENTS.md",
 		"",
-		"`liffy/` contains split leaves for LLM context. Each domain lives in",
-		"`liffy/<domain>/` and has an `index.json` you can navigate.",
+		"`llms-furl/` contains split leaves for LLM context. Each domain lives in",
+		"`llms-furl/<domain>/` and has an `index.json` you can navigate.",
 		"",
 		"## Quick usage",
 		"",
-		'- `rg -n "routing" liffy/nextjs.org`',
-		"- `jq -r '.. | .path? // empty' liffy/nextjs.org/index.json`",
+		'- `rg -n "routing" llms-furl/nextjs.org`',
+		"- `jq -r '.. | .path? // empty' llms-furl/nextjs.org/index.json`",
 		"",
 		"## Domains",
 		"",
@@ -374,19 +374,23 @@ function renderLiffyAgents(domains: DomainEntry[]): string {
 		}
 	}
 
-	lines.push("", "Generated by liffy. Manual edits may be overwritten.", "");
+	lines.push(
+		"",
+		"Generated by llms-furl. Manual edits may be overwritten.",
+		"",
+	);
 	return lines.join("\n");
 }
 
-export function resolveLiffyRoot(
+export function resolveLlmsFurlRoot(
 	outputDir: string,
 	cwd: string = process.cwd(),
 ): string | null {
-	const liffyRoot = resolve(cwd, LIFFY_ROOT);
+	const llmsFurlRoot = resolve(cwd, LLMS_FURL_ROOT);
 	const resolvedOutput = resolve(cwd, outputDir);
-	const rel = relative(liffyRoot, resolvedOutput);
+	const rel = relative(llmsFurlRoot, resolvedOutput);
 	if (rel === "" || !rel.startsWith("..")) {
-		return liffyRoot;
+		return llmsFurlRoot;
 	}
 	return null;
 }
@@ -431,11 +435,13 @@ ${newSection}
 	return true;
 }
 
-export async function ensureLiffyAgents(liffyRoot: string): Promise<boolean> {
-	await mkdir(liffyRoot, { recursive: true });
-	const agentsPath = join(liffyRoot, LIFFY_AGENTS_FILE);
-	const domains = await listDomains(liffyRoot);
-	const content = renderLiffyAgents(domains);
+export async function ensureLlmsFurlAgents(
+	llmsFurlRoot: string,
+): Promise<boolean> {
+	await mkdir(llmsFurlRoot, { recursive: true });
+	const agentsPath = join(llmsFurlRoot, LLMS_FURL_AGENTS_FILE);
+	const domains = await listDomains(llmsFurlRoot);
+	const content = renderLlmsFurlAgents(domains);
 
 	if (existsSync(agentsPath)) {
 		const existing = await readFile(agentsPath, "utf-8");
@@ -461,7 +467,7 @@ export async function getIntegrationActions(
 			actions.push({
 				id: "gitignore",
 				file: ".gitignore",
-				description: "add liffy/ to ignore list",
+				description: "add llms-furl/ to ignore list",
 			});
 		}
 	}
@@ -477,20 +483,22 @@ export async function getIntegrationActions(
 					actions.push({
 						id: "tsconfig",
 						file: "tsconfig.json",
-						description: "exclude liffy/ from compilation",
+						description: "exclude llms-furl/ from compilation",
 					});
 				} else {
-					manualHints.push('Update tsconfig.json exclude to include "liffy"');
+					manualHints.push(
+						'Update tsconfig.json exclude to include "llms-furl"',
+					);
 					manualHints.push("Example snippet:");
 					manualHints.push("{");
-					manualHints.push('  "exclude": ["liffy", "node_modules"]');
+					manualHints.push('  "exclude": ["llms-furl", "node_modules"]');
 					manualHints.push("}");
 				}
 			} catch {
-				manualHints.push('Update tsconfig.json exclude to include "liffy"');
+				manualHints.push('Update tsconfig.json exclude to include "llms-furl"');
 				manualHints.push("Example snippet:");
 				manualHints.push("{");
-				manualHints.push('  "exclude": ["liffy", "node_modules"]');
+				manualHints.push('  "exclude": ["llms-furl", "node_modules"]');
 				manualHints.push("}");
 			}
 		}
@@ -501,7 +509,7 @@ export async function getIntegrationActions(
 		actions.push({
 			id: "agents",
 			file: "AGENTS.md",
-			description: "add liffy section",
+			description: "add llms-furl section",
 		});
 	}
 
@@ -526,7 +534,7 @@ export async function applyIntegrationActions(
 				continue;
 			}
 			const raw = await readFile(gitignorePath, "utf-8");
-			if (hasGitignoreLiffy(raw)) {
+			if (hasGitignoreLlmsFurl(raw)) {
 				results.push({
 					id: action.id,
 					file: action.file,
@@ -539,13 +547,13 @@ export async function applyIntegrationActions(
 			if (next.length > 0 && !next.endsWith("\n")) {
 				next += "\n";
 			}
-			next += "liffy/\n";
+			next += "llms-furl/\n";
 			await writeFile(gitignorePath, next, "utf-8");
 			results.push({
 				id: action.id,
 				file: action.file,
 				applied: true,
-				message: "Added liffy/ to .gitignore",
+				message: "Added llms-furl/ to .gitignore",
 			});
 			continue;
 		}
@@ -576,7 +584,7 @@ export async function applyIntegrationActions(
 				id: action.id,
 				file: action.file,
 				applied: true,
-				message: 'Updated tsconfig.json exclude to include "liffy"',
+				message: 'Updated tsconfig.json exclude to include "llms-furl"',
 			});
 			continue;
 		}
@@ -587,7 +595,7 @@ export async function applyIntegrationActions(
 				file: action.file,
 				applied: updated,
 				message: updated
-					? "Updated AGENTS.md (added liffy section)"
+					? "Updated AGENTS.md (added llms-furl section)"
 					: "AGENTS.md already up to date",
 			});
 		}

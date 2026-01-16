@@ -1,10 +1,10 @@
 {
-	"name": "liffy",
+	"name": "llms-furl",
 	"version": "0.1.0",
 	"description": "Split llms-full.txt into individual markdown files",
 	"type": "module",
 	"bin": {
-		"liffy": "./dist/index.js"
+		"llms-furl": "./dist/index.js"
 	},
 	"files": [
 		"dist"

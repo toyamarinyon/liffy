@@ -1,28 +1,31 @@
-# Agent awareness for liffy output
+# Agent awareness for llms-furl output
 
 ## Decision
 
-- Do not generate a top-level `liffy/index.json`. Only per-domain
-  `liffy/<domain>/index.json` is created.
-- Always generate/update `liffy/AGENTS.md` as the entry point for liffy output.
-  It explains what `liffy/` is, shows minimal usage examples, and lists domains
-  by reading each `liffy/<domain>/index.json` (including optional `source`).
-- Ensure root `AGENTS.md` contains a marker-wrapped liffy section pointing to
-  `liffy/AGENTS.md`. If the file exists, update the marker section idempotently;
+- Do not generate a top-level `llms-furl/index.json`. Only per-domain
+  `llms-furl/<domain>/index.json` is created.
+- Always generate/update `llms-furl/AGENTS.md` as the entry point for llms-furl
+  output. It explains what `llms-furl/` is, shows minimal usage examples, and
+  lists domains by reading each `llms-furl/<domain>/index.json` (including
+  optional `source`).
+- Ensure root `AGENTS.md` contains a marker-wrapped llms-furl section pointing
+  to `llms-furl/AGENTS.md`. If the file exists, update the marker section
+  idempotently;
   if not, create a minimal `AGENTS.md` with the section.
-- When output is inside `liffy/`, liffy can integrate with the repo on first
-  run by offering to update these files (TTY only):
-  - `.gitignore`: add `liffy/`
-  - `tsconfig.json`: add `liffy` to `exclude` when a safe update is possible
-  - `AGENTS.md`: add/update the liffy section
+- When output is inside `llms-furl/`, llms-furl can integrate with the repo on
+  first run by offering to update these files (TTY only):
+  - `.gitignore`: add `llms-furl/`
+  - `tsconfig.json`: add `llms-furl` to `exclude` when a safe update is possible
+  - `AGENTS.md`: add/update the llms-furl section
 - If the user denies consent or the environment is non-interactive, do not edit
   repo files and print short hints instead.
 
 ## Notes
 
-- Use marker-wrapped snippets (e.g. `<!-- liffy:start -->`) to keep `AGENTS.md`
+- Use marker-wrapped snippets (e.g. `<!-- llms-furl:start -->`) to keep
+  `AGENTS.md`
   updates idempotent, following the opensrc approach.
-- Persist integration consent in `liffy/.liffy.json` (`integration.consent` and
-  `integration.applied`).
+- Persist integration consent in `llms-furl/.llms-furl.json`
+  (`integration.consent` and `integration.applied`).
 - `tsconfig.json` is only auto-edited if the `exclude` array can be updated
   safely; otherwise a manual update hint is shown.

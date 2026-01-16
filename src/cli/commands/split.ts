@@ -3,10 +3,10 @@ import { dirname, join, relative, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import {
 	applyIntegrationActions,
-	ensureLiffyAgents,
+	ensureLlmsFurlAgents,
 	getIntegrationActions,
 	getIntegrationConsent,
-	resolveLiffyRoot,
+	resolveLlmsFurlRoot,
 	setIntegrationConsent,
 } from "../../agents.js";
 import { buildIndexJson } from "../../index-json.js";
@@ -42,7 +42,7 @@ function isUrl(input: string): boolean {
 
 function urlToOutputDir(url: string): string {
 	const parsed = new URL(url);
-	return join("liffy", parsed.host);
+	return join("llms-furl", parsed.host);
 }
 
 function formatPath(targetPath: string): string {
@@ -244,39 +244,39 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 	const indexPath = join(outputDir, "index.json");
 	await writeFile(indexPath, indexContent, "utf-8");
 
-	const liffyRoot = resolveLiffyRoot(outputDir);
+	const llmsFurlRoot = resolveLlmsFurlRoot(outputDir);
 	logLines.push(`  ${formatOk(`Saved to ${outputDisplay}`)}`);
 	if (options.debug) {
 		logLines.push(`  -> Index: ${formatPath(indexPath)}`);
 	}
-	if (liffyRoot) {
+	if (llmsFurlRoot) {
 		try {
-			const agentsUpdated = await ensureLiffyAgents(liffyRoot);
+			const agentsUpdated = await ensureLlmsFurlAgents(llmsFurlRoot);
 			void agentsUpdated;
 			const { actions, manualHints } = await getIntegrationActions();
 			const isInteractive = Boolean(
 				process.stdout.isTTY && process.stdin.isTTY,
 			);
-			const consent = await getIntegrationConsent(liffyRoot);
+			const consent = await getIntegrationConsent(llmsFurlRoot);
 			if (actions.length > 0 && isInteractive && consent !== "denied") {
 				console.log("");
 				console.log(
-					"liffy can update the following files for better integration:",
+					"llms-furl can update the following files for better integration:",
 				);
 				for (const action of actions) {
 					console.log(`  • ${action.file} - ${action.description}`);
 				}
 				const allowed = await promptYesNo(
-					"Allow liffy to modify these files? (y/n): ",
+					"Allow llms-furl to modify these files? (y/n): ",
 				);
 				if (allowed) {
 					const results = await applyIntegrationActions(actions);
 					const applied = results.some((result) => result.applied);
-					await setIntegrationConsent(liffyRoot, "granted", applied);
+					await setIntegrationConsent(llmsFurlRoot, "granted", applied);
 					console.log(
 						formatOk(
 							`Permission granted - saved to ${formatPath(
-								join(liffyRoot, ".liffy.json"),
+								join(llmsFurlRoot, ".llms-furl.json"),
 							)}`,
 						),
 					);
@@ -288,7 +288,7 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 						}
 					}
 				} else {
-					await setIntegrationConsent(liffyRoot, "denied", false);
+					await setIntegrationConsent(llmsFurlRoot, "denied", false);
 					console.log("Skipping integration updates.");
 				}
 				if (manualHints.length > 0) {
@@ -300,7 +300,7 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 			} else {
 				if (actions.length > 0) {
 					hintLines.push(
-						"liffy can update the following files for better integration:",
+						"llms-furl can update the following files for better integration:",
 					);
 					for (const action of actions) {
 						hintLines.push(`• ${action.file} - ${action.description}`);

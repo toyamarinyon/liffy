@@ -77,14 +77,14 @@ export function parseArgs(argv: string[]): ParsedArgs {
 }
 
 export function showHelp(): void {
-	console.log(`liffy - Split llms-full.txt into individual markdown files
+	console.log(`llms-furl - Split llms-full.txt into individual markdown files
 
 Usage:
-  liffy <input> [output-dir]       Split input file (default: current dir)
-  liffy split <input> [output-dir] Same as above
-  liffy list [output-dir]          List split files
-  liffy remove <files...>          Remove specific files
-  liffy clean [output-dir]         Remove all split files
+  llms-furl <input> [output-dir]       Split input file (default: current dir)
+  llms-furl split <input> [output-dir] Same as above
+  llms-furl list [output-dir]          List split files
+  llms-furl remove <files...>          Remove specific files
+  llms-furl clean [output-dir]         Remove all split files
 
 Options:
   --help, -h     Show this help
