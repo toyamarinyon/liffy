@@ -29,10 +29,12 @@
 - [x] 分割後にindex.jsonを作成 → `src/cli/commands/split.ts`
 - [x] 初回起動で root AGENTS.md に案内を追記 → `src/agents.ts`, `src/cli/commands/split.ts`
 - [x] liffy/AGENTS.md の生成と内容整備 → `src/agents.ts`, `src/cli/commands/split.ts`
+- [x] 初回統合で追記するAGENTS.mdのllms-full参照ガイドを更新 → `src/agents.ts`
 - [x] 初回実行時に tsconfig.json exclude 追加を促す表示 → `src/agents.ts`, `src/cli/commands/split.ts`
 - [x] 初回実行時の info/hint 出力を簡潔に整形 → `src/cli/commands/split.ts`
 - [x] 初回統合の y/n プロンプトと許可制の更新 → `src/agents.ts`, `src/cli/commands/split.ts`
 - [x] okタスクのlint/typecheck/knip修正 → `src/agents.ts`, `src/cli/commands/split.ts`, `package.json`
+- [x] bun testのroot設定を追加 → [./bunfig.toml](./bunfig.toml)
 
 ## Next
 
