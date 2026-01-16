@@ -1,5 +1,5 @@
-import { readFile, readdir, writeFile, mkdir } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 
 const ROOT_AGENTS_FILE = "AGENTS.md";
@@ -20,6 +20,23 @@ type LiffyState = {
 		tsconfigExclude?: boolean;
 		gitignore?: boolean;
 	};
+	integration?: {
+		consent?: "granted" | "denied";
+		applied?: boolean;
+	};
+};
+
+export type IntegrationAction = {
+	id: "gitignore" | "tsconfig" | "agents";
+	file: string;
+	description: string;
+};
+
+export type IntegrationResult = {
+	id: IntegrationAction["id"];
+	file: string;
+	applied: boolean;
+	message: string;
 };
 
 function getRootSectionContent(): string {
@@ -69,6 +86,23 @@ async function writeLiffyState(
 	await writeFile(statePath, `${JSON.stringify(state, null, 2)}\n`, "utf-8");
 }
 
+export async function getIntegrationConsent(
+	liffyRoot: string,
+): Promise<"granted" | "denied" | null> {
+	const state = await readLiffyState(liffyRoot);
+	return state.integration?.consent ?? null;
+}
+
+export async function setIntegrationConsent(
+	liffyRoot: string,
+	consent: "granted" | "denied",
+	applied: boolean,
+): Promise<void> {
+	const state = await readLiffyState(liffyRoot);
+	state.integration = { consent, applied };
+	await writeLiffyState(liffyRoot, state);
+}
+
 async function hasTsconfigExclude(cwd: string): Promise<boolean> {
 	const tsconfigPath = join(cwd, "tsconfig.json");
 	if (!existsSync(tsconfigPath)) {
@@ -110,6 +144,157 @@ async function hasGitignoreEntry(cwd: string): Promise<boolean> {
 	} catch {
 		return false;
 	}
+}
+
+async function needsRootAgentsSnippet(cwd: string): Promise<boolean> {
+	const agentsPath = join(cwd, ROOT_AGENTS_FILE);
+	const newSection = getRootSectionContent();
+	if (!existsSync(agentsPath)) {
+		return true;
+	}
+	try {
+		const content = await readFile(agentsPath, "utf-8");
+		if (!content.includes(SECTION_MARKER)) {
+			return true;
+		}
+		const existingSection = extractSection(content);
+		return existingSection !== newSection;
+	} catch {
+		return true;
+	}
+}
+
+function findExcludeArrayRange(
+	raw: string,
+): { start: number; end: number } | null {
+	const matches = raw.matchAll(/"exclude"\s*:/g);
+	for (const match of matches) {
+		if (match.index === undefined) continue;
+		let idx = match.index + match[0].length;
+		while (idx < raw.length) {
+			const next = raw.slice(idx, idx + 2);
+			if (/\s/.test(raw[idx])) {
+				idx += 1;
+				continue;
+			}
+			if (next === "//") {
+				const lineEnd = raw.indexOf("\n", idx);
+				idx = lineEnd === -1 ? raw.length : lineEnd + 1;
+				continue;
+			}
+			if (next === "/*") {
+				const blockEnd = raw.indexOf("*/", idx + 2);
+				idx = blockEnd === -1 ? raw.length : blockEnd + 2;
+				continue;
+			}
+			break;
+		}
+		if (raw[idx] !== "[") continue;
+		const start = idx;
+		let depth = 0;
+		let inString = false;
+		let escape = false;
+		for (let i = start; i < raw.length; i++) {
+			const char = raw[i];
+			const pair = raw.slice(i, i + 2);
+			if (inString) {
+				if (escape) {
+					escape = false;
+				} else if (char === "\\") {
+					escape = true;
+				} else if (char === '"') {
+					inString = false;
+				}
+				continue;
+			}
+			if (pair === "//") {
+				const lineEnd = raw.indexOf("\n", i);
+				i = lineEnd === -1 ? raw.length : lineEnd;
+				continue;
+			}
+			if (pair === "/*") {
+				const blockEnd = raw.indexOf("*/", i + 2);
+				if (blockEnd === -1) return null;
+				i = blockEnd + 1;
+				continue;
+			}
+			if (char === '"') {
+				inString = true;
+				continue;
+			}
+			if (char === "[") {
+				depth += 1;
+				continue;
+			}
+			if (char === "]") {
+				depth -= 1;
+				if (depth === 0) {
+					return { start, end: i };
+				}
+			}
+		}
+	}
+	return null;
+}
+
+function getLastLineIndent(text: string): string | null {
+	const lines = text.split("\n");
+	for (let i = lines.length - 1; i >= 0; i--) {
+		if (lines[i].trim()) {
+			return lines[i].match(/^[ \t]*/)?.[0] ?? "";
+		}
+	}
+	return null;
+}
+
+function getLineIndentAt(text: string, index: number): string {
+	const lineStart = text.lastIndexOf("\n", index);
+	const start = lineStart === -1 ? 0 : lineStart + 1;
+	return text.slice(start).match(/^[ \t]*/)?.[0] ?? "";
+}
+
+function buildTsconfigExcludeUpdate(raw: string): string | null {
+	if (raw.includes("liffy")) {
+		return null;
+	}
+	const range = findExcludeArrayRange(raw);
+	if (!range) {
+		return null;
+	}
+	const arrayText = raw.slice(range.start + 1, range.end);
+	if (arrayText.includes("//") || arrayText.includes("/*")) {
+		return null;
+	}
+	const hasNewline = arrayText.includes("\n");
+	if (!hasNewline) {
+		const trimmed = arrayText.trim();
+		const leading = arrayText.match(/^\s*/)?.[0] ?? "";
+		const trailing = arrayText.match(/\s*$/)?.[0] ?? "";
+		const suffix =
+			trimmed.length === 0 ? "" : trimmed.endsWith(",") ? "" : ", ";
+		const newArrayText = `${leading}${trimmed}${suffix}"liffy"${trailing}`;
+		return raw.slice(0, range.start + 1) + newArrayText + raw.slice(range.end);
+	}
+	let updatedArrayText = arrayText;
+	for (let i = arrayText.length - 1; i >= 0; i--) {
+		if (/\S/.test(arrayText[i])) {
+			const lastChar = arrayText[i];
+			if (lastChar !== "," && lastChar !== "[") {
+				updatedArrayText =
+					arrayText.slice(0, i + 1) + "," + arrayText.slice(i + 1);
+			}
+			break;
+		}
+	}
+	const baseIndent = getLineIndentAt(raw, range.end);
+	const itemIndent = getLastLineIndent(updatedArrayText) ?? `${baseIndent}  `;
+	const insertion = `\n${itemIndent}"liffy"`;
+	return (
+		raw.slice(0, range.start + 1) +
+		updatedArrayText +
+		insertion +
+		raw.slice(range.end)
+	);
 }
 
 async function listDomains(liffyRoot: string): Promise<DomainEntry[]> {
@@ -159,7 +344,7 @@ function renderLiffyAgents(domains: DomainEntry[]): string {
 		"",
 		"## Quick usage",
 		"",
-		"- `rg -n \"routing\" liffy/nextjs.org`",
+		'- `rg -n "routing" liffy/nextjs.org`',
 		"- `jq -r '.. | .path? // empty' liffy/nextjs.org/index.json`",
 		"",
 		"## Domains",
@@ -235,9 +420,7 @@ ${newSection}
 	return true;
 }
 
-export async function ensureLiffyAgents(
-	liffyRoot: string,
-): Promise<boolean> {
+export async function ensureLiffyAgents(liffyRoot: string): Promise<boolean> {
 	await mkdir(liffyRoot, { recursive: true });
 	const agentsPath = join(liffyRoot, LIFFY_AGENTS_FILE);
 	const domains = await listDomains(liffyRoot);
@@ -254,51 +437,149 @@ export async function ensureLiffyAgents(
 	return true;
 }
 
-export async function maybeGetFirstRunHints(
-	liffyRoot: string,
+export async function getIntegrationActions(
 	cwd: string = process.cwd(),
-): Promise<string[]> {
-	const hints: string[] = [];
-	const state = await readLiffyState(liffyRoot);
-	const notices = { ...state.notices };
-	let dirty = false;
+): Promise<{ actions: IntegrationAction[]; manualHints: string[] }> {
+	const actions: IntegrationAction[] = [];
+	const manualHints: string[] = [];
 
-	if (!notices.tsconfigExclude) {
-		const tsconfigPath = join(cwd, "tsconfig.json");
-		if (existsSync(tsconfigPath)) {
-			const hasExclude = await hasTsconfigExclude(cwd);
-			if (!hasExclude) {
-				hints.push('Update tsconfig.json exclude to include "liffy"');
-				hints.push("Example snippet:");
-				hints.push("{");
-				hints.push('  "exclude": ["liffy", "node_modules"]');
-				hints.push("}");
-			}
-			notices.tsconfigExclude = true;
-			dirty = true;
+	const gitignorePath = join(cwd, ".gitignore");
+	if (existsSync(gitignorePath)) {
+		const hasIgnore = await hasGitignoreEntry(cwd);
+		if (!hasIgnore) {
+			actions.push({
+				id: "gitignore",
+				file: ".gitignore",
+				description: "add liffy/ to ignore list",
+			});
 		}
 	}
 
-	if (!notices.gitignore) {
-		const gitignorePath = join(cwd, ".gitignore");
-		if (existsSync(gitignorePath)) {
-			const hasIgnore = await hasGitignoreEntry(cwd);
-			if (!hasIgnore) {
-				if (hints.length > 0) {
-					hints.push("");
+	const tsconfigPath = join(cwd, "tsconfig.json");
+	if (existsSync(tsconfigPath)) {
+		const hasExclude = await hasTsconfigExclude(cwd);
+		if (!hasExclude) {
+			try {
+				const raw = await readFile(tsconfigPath, "utf-8");
+				const updated = buildTsconfigExcludeUpdate(raw);
+				if (updated) {
+					actions.push({
+						id: "tsconfig",
+						file: "tsconfig.json",
+						description: "exclude liffy/ from compilation",
+					});
+				} else {
+					manualHints.push('Update tsconfig.json exclude to include "liffy"');
+					manualHints.push("Example snippet:");
+					manualHints.push("{");
+					manualHints.push('  "exclude": ["liffy", "node_modules"]');
+					manualHints.push("}");
 				}
-				hints.push('Add "liffy/" to .gitignore if output is generated');
-				hints.push("Run:");
-				hints.push('echo "liffy/" >> .gitignore');
+			} catch {
+				manualHints.push('Update tsconfig.json exclude to include "liffy"');
+				manualHints.push("Example snippet:");
+				manualHints.push("{");
+				manualHints.push('  "exclude": ["liffy", "node_modules"]');
+				manualHints.push("}");
 			}
-			notices.gitignore = true;
-			dirty = true;
 		}
 	}
 
-	if (dirty) {
-		state.notices = notices;
-		await writeLiffyState(liffyRoot, state);
+	const needsAgents = await needsRootAgentsSnippet(cwd);
+	if (needsAgents) {
+		actions.push({
+			id: "agents",
+			file: "AGENTS.md",
+			description: "add liffy section",
+		});
 	}
-	return hints;
+
+	return { actions, manualHints };
+}
+
+export async function applyIntegrationActions(
+	actions: IntegrationAction[],
+	cwd: string = process.cwd(),
+): Promise<IntegrationResult[]> {
+	const results: IntegrationResult[] = [];
+	for (const action of actions) {
+		if (action.id === "gitignore") {
+			const gitignorePath = join(cwd, ".gitignore");
+			if (!existsSync(gitignorePath)) {
+				results.push({
+					id: action.id,
+					file: action.file,
+					applied: false,
+					message: "Skipped .gitignore (not found)",
+				});
+				continue;
+			}
+			const raw = await readFile(gitignorePath, "utf-8");
+			if (hasGitignoreLiffy(raw)) {
+				results.push({
+					id: action.id,
+					file: action.file,
+					applied: false,
+					message: "Skipped .gitignore (already ignored)",
+				});
+				continue;
+			}
+			let next = raw;
+			if (next.length > 0 && !next.endsWith("\n")) {
+				next += "\n";
+			}
+			next += "liffy/\n";
+			await writeFile(gitignorePath, next, "utf-8");
+			results.push({
+				id: action.id,
+				file: action.file,
+				applied: true,
+				message: "Added liffy/ to .gitignore",
+			});
+			continue;
+		}
+		if (action.id === "tsconfig") {
+			const tsconfigPath = join(cwd, "tsconfig.json");
+			if (!existsSync(tsconfigPath)) {
+				results.push({
+					id: action.id,
+					file: action.file,
+					applied: false,
+					message: "Skipped tsconfig.json (not found)",
+				});
+				continue;
+			}
+			const raw = await readFile(tsconfigPath, "utf-8");
+			const updated = buildTsconfigExcludeUpdate(raw);
+			if (!updated) {
+				results.push({
+					id: action.id,
+					file: action.file,
+					applied: false,
+					message: "Skipped tsconfig.json (manual update recommended)",
+				});
+				continue;
+			}
+			await writeFile(tsconfigPath, updated, "utf-8");
+			results.push({
+				id: action.id,
+				file: action.file,
+				applied: true,
+				message: 'Updated tsconfig.json exclude to include "liffy"',
+			});
+			continue;
+		}
+		if (action.id === "agents") {
+			const updated = await ensureRootAgentsSnippet(cwd);
+			results.push({
+				id: action.id,
+				file: action.file,
+				applied: updated,
+				message: updated
+					? "Updated AGENTS.md (added liffy section)"
+					: "AGENTS.md already up to date",
+			});
+		}
+	}
+	return results;
 }

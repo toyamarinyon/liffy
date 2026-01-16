@@ -6,6 +6,7 @@
 - URL inputの出力先はドメイン配下に固定（pathは無視）
 - 単一のトップレベルディレクトリはフラット化: [./decisions/flatten-output-root.md](./decisions/flatten-output-root.md)
 - Agentにliffyを認知させる方針: [./decisions/agent-awareness.md](./decisions/agent-awareness.md)
+- 初回統合（opensrc踏襲のy/n許可と表示）: [./decisions/first-run-integration.md](./decisions/first-run-integration.md)
 
 ## Completed
 
@@ -29,6 +30,8 @@
 - [x] 初回起動で root AGENTS.md に案内を追記 → `src/agents.ts`, `src/cli/commands/split.ts`
 - [x] liffy/AGENTS.md の生成と内容整備 → `src/agents.ts`, `src/cli/commands/split.ts`
 - [x] 初回実行時に tsconfig.json exclude 追加を促す表示 → `src/agents.ts`, `src/cli/commands/split.ts`
+- [x] 初回実行時の info/hint 出力を簡潔に整形 → `src/cli/commands/split.ts`
+- [x] 初回統合の y/n プロンプトと許可制の更新 → `src/agents.ts`, `src/cli/commands/split.ts`
 
 ## Next
 

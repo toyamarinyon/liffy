@@ -4,3 +4,23 @@ node = "latest"
 
 [tasks.reset-liffy]
 run = "rm -rf liffy"
+
+[tasks.ok]
+description = "Run format, typecheck, and knip checks"
+run = [
+  { task = "format" },
+  { task = "typecheck" },
+  { task = "knip" },
+]
+
+[tasks.format]
+description = "Format code with Biome"
+run = "bun run --silent format"
+
+[tasks.knip]
+description = "Check for unused exports and dependencies"
+run = "bun run --silent knip"
+
+[tasks."typecheck"]
+description = "Typecheck "
+run = "bun run --silent  typecheck"

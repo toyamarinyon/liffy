@@ -1,11 +1,13 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
+import { createInterface } from "node:readline/promises";
 import {
+	applyIntegrationActions,
 	ensureLiffyAgents,
-	ensureRootAgentsSnippet,
-	getRootAgentsSnippet,
-	maybeGetFirstRunHints,
+	getIntegrationActions,
+	getIntegrationConsent,
 	resolveLiffyRoot,
+	setIntegrationConsent,
 } from "../../agents.js";
 import { buildIndexJson } from "../../index-json.js";
 import { type Page, split } from "../../splitter.js";
@@ -60,20 +62,58 @@ function formatOk(message: string): string {
 	return `${okMark()} ${message}`;
 }
 
+async function promptYesNo(prompt: string): Promise<boolean> {
+	const rl = createInterface({
+		input: process.stdin,
+		output: process.stdout,
+	});
+	try {
+		const answer = await rl.question(prompt);
+		const normalized = answer.trim().toLowerCase();
+		return normalized === "y" || normalized === "yes";
+	} finally {
+		rl.close();
+	}
+}
+
+function isLabelLine(line: string): boolean {
+	return line === "Example snippet:" || line === "Run:";
+}
+
+function isCodeLine(line: string): boolean {
+	const trimmed = line.trim();
+	if (!trimmed) {
+		return false;
+	}
+	return (
+		trimmed === "{" ||
+		trimmed === "}" ||
+		trimmed.startsWith('"') ||
+		trimmed.startsWith("echo ")
+	);
+}
+
 function printSection(title: string, lines: string[]): void {
 	if (lines.length === 0) {
 		return;
 	}
 	const headerColor = title === "hint" ? ANSI.yellow : ANSI.cyan;
-	const header = `${style(title, ANSI.bold, headerColor)} ${style(
-		"--------------------",
-		ANSI.dim,
-	)}`;
 	console.log("");
-	console.log(header);
-	console.log("");
+	console.log(style(title, ANSI.bold, headerColor));
 	for (const line of lines) {
-		console.log(`    ${line}`);
+		if (!line) {
+			console.log("");
+			continue;
+		}
+		if (isLabelLine(line)) {
+			console.log(`  ${style(line, ANSI.bold, ANSI.dim)}`);
+			continue;
+		}
+		if (isCodeLine(line)) {
+			console.log(`    ${style(line.trim(), ANSI.dim)}`);
+			continue;
+		}
+		console.log(`  ${line}`);
 	}
 }
 
@@ -173,7 +213,6 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 
 	const outputDisplay = formatPath(outputDir);
 	const logLines: string[] = [];
-	const infoLines: string[] = [];
 	const hintLines: string[] = [];
 	if (options.debug) {
 		logLines.push(`  -> Detected: ${result.pattern}`);
@@ -212,31 +251,74 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 		try {
 			const agentsUpdated = await ensureLiffyAgents(liffyRoot);
 			void agentsUpdated;
-
-			const rootUpdated = await ensureRootAgentsSnippet();
-			if (rootUpdated) {
-				infoLines.push(
-					formatOk(
-						`Updated ${formatPath("AGENTS.md")} (added liffy section)`,
-					),
+			const { actions, manualHints } = await getIntegrationActions();
+			const isInteractive = Boolean(
+				process.stdout.isTTY && process.stdin.isTTY,
+			);
+			const consent = await getIntegrationConsent(liffyRoot);
+			if (actions.length > 0 && isInteractive && consent !== "denied") {
+				console.log("");
+				console.log(
+					"liffy can update the following files for better integration:",
 				);
-				infoLines.push("");
-				infoLines.push(...getRootAgentsSnippet().split("\n"));
-			}
-
-			const hints = await maybeGetFirstRunHints(liffyRoot);
-			if (hints.length > 0) {
-				hintLines.push(...hints);
+				for (const action of actions) {
+					console.log(`  • ${action.file} - ${action.description}`);
+				}
+				const allowed = await promptYesNo(
+					"Allow liffy to modify these files? (y/n): ",
+				);
+				if (allowed) {
+					const results = await applyIntegrationActions(actions);
+					const applied = results.some((result) => result.applied);
+					await setIntegrationConsent(liffyRoot, "granted", applied);
+					console.log(
+						formatOk(
+							`Permission granted - saved to ${formatPath(
+								join(liffyRoot, ".liffy.json"),
+							)}`,
+						),
+					);
+					for (const result of results) {
+						if (result.applied) {
+							console.log(formatOk(result.message));
+						} else {
+							console.warn(`Warning: ${result.message}`);
+						}
+					}
+				} else {
+					await setIntegrationConsent(liffyRoot, "denied", false);
+					console.log("Skipping integration updates.");
+				}
+				if (manualHints.length > 0) {
+					if (hintLines.length > 0) {
+						hintLines.push("");
+					}
+					hintLines.push(...manualHints);
+				}
+			} else {
+				if (actions.length > 0) {
+					hintLines.push(
+						"liffy can update the following files for better integration:",
+					);
+					for (const action of actions) {
+						hintLines.push(`• ${action.file} - ${action.description}`);
+					}
+				}
+				if (manualHints.length > 0) {
+					if (hintLines.length > 0) {
+						hintLines.push("");
+					}
+					hintLines.push(...manualHints);
+				}
 			}
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			console.warn(`Warning: failed to update AGENTS.md (${message})`);
+			console.warn(`Warning: integration updates failed (${message})`);
 		}
 	}
 
 	for (const line of logLines) {
 		console.log(line);
 	}
-	printSection("info", infoLines);
 	printSection("hint", hintLines);
 }
