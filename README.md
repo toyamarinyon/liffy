@@ -119,3 +119,7 @@ In TTY, you get a y/n prompt; in non-interactive runs it prints hints only. Cons
 
 `llms-furl` lets you treat your LLM documentation the way Unix always wanted you to:
 as a **living, searchable filesystem of knowledge**.
+
+## Acknowledgments
+
+This project was inspired by [opensrc](https://github.com/vercel-labs/opensrc). Thank you for the great idea!
