@@ -77,7 +77,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
 }
 
 export function showHelp(): void {
-	console.log(`llms-furl - Split llms-full.txt into individual markdown files
+	console.log(`llms-furl - Split llms-full.txt (or llms.txt link lists) into individual markdown files
 
 Usage:
   llms-furl <input> [output-dir]       Split input file (default: current dir)

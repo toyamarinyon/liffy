@@ -10,7 +10,8 @@ import {
 	setIntegrationConsent,
 } from "../../agents.js";
 import { buildIndexJson } from "../../index-json.js";
-import { type Page, split } from "../../splitter.js";
+import { extractLlmsTxtLinks } from "../../llms-txt.js";
+import { type Page, split, urlToOutputPath } from "../../splitter.js";
 
 const ANSI = {
 	reset: "\x1b[0m",
@@ -35,6 +36,8 @@ export interface SplitOptions {
 	outputDir?: string;
 	debug?: boolean;
 }
+
+type DebugLogger = (message: string) => void;
 
 function isUrl(input: string): boolean {
 	return input.startsWith("http://") || input.startsWith("https://");
@@ -161,8 +164,10 @@ function maybeFlattenOutputPaths(pages: Page[]): {
 	return { pages: flattenedPages, flattenedRoot: rootDir };
 }
 
-async function fetchContent(url: string): Promise<string> {
-	console.log(`\nFetching ${url}...`);
+async function fetchContent(url: string, log = true): Promise<string> {
+	if (log) {
+		console.log(`\nFetching ${url}...`);
+	}
 
 	const response = await fetch(url);
 
@@ -171,6 +176,87 @@ async function fetchContent(url: string): Promise<string> {
 	}
 
 	return response.text();
+}
+
+function shouldPrefixHost(urls: string[]): boolean {
+	const hosts = new Set<string>();
+	for (const url of urls) {
+		try {
+			hosts.add(new URL(url).host);
+		} catch {}
+	}
+	return hosts.size > 1;
+}
+
+function outputPathForUrl(url: string, includeHostPrefix: boolean): string {
+	const basePath = urlToOutputPath(url);
+	if (!includeHostPrefix) {
+		return basePath;
+	}
+	try {
+		const host = new URL(url).host;
+		return `${host}/${basePath}`;
+	} catch {
+		return basePath;
+	}
+}
+
+async function fetchLinkedPages(
+	urls: string[],
+	includeHostPrefix: boolean,
+	debug?: DebugLogger,
+): Promise<Page[]> {
+	const results: Array<Page | null> = new Array(urls.length).fill(null);
+	const seenPaths = new Set<string>();
+	let cursor = 0;
+	let debugSamples = 0;
+
+	const worker = async (): Promise<void> => {
+		while (true) {
+			const index = cursor;
+			cursor += 1;
+			if (index >= urls.length) {
+				return;
+			}
+			const url = urls[index];
+			if (!url) {
+				continue;
+			}
+
+			try {
+				const content = await fetchContent(url, false);
+				const outputPath = outputPathForUrl(url, includeHostPrefix);
+				if (seenPaths.has(outputPath)) {
+					console.warn(
+						`Warning: duplicate output path "${outputPath}" for ${url} (skipping)`,
+					);
+					continue;
+				}
+				seenPaths.add(outputPath);
+
+				results[index] = {
+					title: url,
+					url,
+					content,
+					outputPath,
+				};
+
+				if (debug && debugSamples < 3) {
+					debug(`llms.txt link ${index + 1}: ${url} -> ${outputPath}`);
+					debugSamples += 1;
+				}
+			} catch (error) {
+				const message = error instanceof Error ? error.message : String(error);
+				console.warn(`Warning: failed to fetch ${url} (${message})`);
+			}
+		}
+	};
+
+	const concurrency = Math.min(6, urls.length);
+	const workers = Array.from({ length: concurrency }, () => worker());
+	await Promise.all(workers);
+
+	return results.filter((page): page is Page => page !== null);
 }
 
 export async function splitCommand(options: SplitOptions): Promise<void> {
@@ -204,10 +290,31 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 			: undefined;
 
 	const result = split(content, debug);
+	let detectedLabel: string = result.pattern;
+	let pages = result.pages;
+	let llmsTxtLinks: string[] | null = null;
+
+	if (pages.length === 0) {
+		const baseUrl = inputIsUrl ? input : undefined;
+		const links = extractLlmsTxtLinks(content, baseUrl);
+		if (links.length > 0) {
+			llmsTxtLinks = links;
+			detectedLabel = "llms-txt";
+			console.log(`\nFetching ${links.length} linked pages...`);
+			const includeHostPrefix = shouldPrefixHost(links);
+			if (debug) {
+				debug(
+					`llms.txt links: ${links.length} (host prefix: ${
+						includeHostPrefix ? "on" : "off"
+					})`,
+				);
+			}
+			pages = await fetchLinkedPages(links, includeHostPrefix, debug);
+		}
+	}
+
 	const adjusted =
-		inputIsUrl === true
-			? maybeFlattenOutputPaths(result.pages)
-			: { pages: result.pages };
+		inputIsUrl === true ? maybeFlattenOutputPaths(pages) : { pages };
 
 	if (adjusted.pages.length === 0) {
 		const hint = options.debug ? "" : " (try --debug)";
@@ -219,7 +326,10 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 	const logLines: string[] = [];
 	const hintLines: string[] = [];
 	if (options.debug) {
-		logLines.push(`  -> Detected: ${result.pattern}`);
+		logLines.push(`  -> Detected: ${detectedLabel}`);
+		if (llmsTxtLinks) {
+			logLines.push(`  -> Links: ${llmsTxtLinks.length}`);
+		}
 	}
 	let pagesLine = `  -> Pages: ${adjusted.pages.length}`;
 	if (options.debug && adjusted.flattenedRoot) {

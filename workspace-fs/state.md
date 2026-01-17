@@ -41,6 +41,7 @@
 - [x] Update README -> [./README.md](./README.md)
 - [x] Rename package/CLI to llms-furl -> [./package.json](./package.json), [./README.md](./README.md), [./src/cli/args.ts](./src/cli/args.ts)
 - [x] Add publish workflow dispatch with version bump -> [./.github/workflows/publish.yml](./.github/workflows/publish.yml)
+- [x] Add llms.txt link-list ingestion -> [./src/llms-txt.ts](./src/llms-txt.ts), [./src/cli/commands/split.ts](./src/cli/commands/split.ts), [./README.md](./README.md)
 
 ## Next
 

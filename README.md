@@ -1,6 +1,6 @@
 # llms-furl
 
-Furl `llms-full.txt` into a structured tree of small, searchable files you can assemble into LLM context with standard Unix tools.
+Furl `llms-full.txt` (or `llms.txt` link lists) into a structured tree of small, searchable files you can assemble into LLM context with standard Unix tools.
 
 ```text
                                           ├── api/
@@ -115,6 +115,16 @@ llms-furl detects common llms-full formats automatically:
 - Pattern D: Vercel-style dash-separated blocks with `title:` and `source:`
 
 Code blocks are ignored when detecting boundaries.
+
+## llms.txt link lists
+
+If a site only provides `llms.txt`, llms-furl reads every link in the list,
+fetches each page, and writes each one as a leaf file. Relative links are
+resolved against the `llms.txt` URL.
+
+```bash
+llms-furl https://cursor.com/llms.txt
+```
 
 ## Integration hints
 
