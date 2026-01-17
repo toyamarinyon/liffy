@@ -43,6 +43,7 @@
 - [x] Add publish workflow dispatch with version bump -> [./.github/workflows/publish.yml](./.github/workflows/publish.yml)
 - [x] Enable npm trusted publishing (OIDC) in publish workflow -> [./.github/workflows/publish.yml](./.github/workflows/publish.yml)
 - [x] Add llms.txt link-list ingestion -> [./src/llms-txt.ts](./src/llms-txt.ts), [./src/cli/commands/split.ts](./src/cli/commands/split.ts), [./README.md](./README.md)
+- [x] Fix llms.txt fetch failure typecheck (status parsing) -> [./src/cli/commands/split.ts](./src/cli/commands/split.ts)
 
 ## Next
 

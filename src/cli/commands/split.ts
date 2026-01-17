@@ -248,32 +248,36 @@ async function fetchLinkedPages(
 			if (!url) {
 				continue;
 			}
+			const resolvedUrl: string = url;
 
 			try {
-				const content = await fetchContent(url, false);
-				const outputPath = outputPathForUrl(url, includeHostPrefix);
+				const content = await fetchContent(resolvedUrl, false);
+				const outputPath = outputPathForUrl(resolvedUrl, includeHostPrefix);
 				if (seenPaths.has(outputPath)) {
-					skipped.push({ url, reason: `duplicate path "${outputPath}"` });
+					skipped.push({
+						url: resolvedUrl,
+						reason: `duplicate path "${outputPath}"`,
+					});
 					continue;
 				}
 				seenPaths.add(outputPath);
 
 				results[index] = {
-					title: url,
-					url,
+					title: resolvedUrl,
+					url: resolvedUrl,
 					content,
 					outputPath,
 				};
 
 				if (debug && debugSamples < 3) {
-					debug(`llms.txt link ${index + 1}: ${url} -> ${outputPath}`);
+					debug(`llms.txt link ${index + 1}: ${resolvedUrl} -> ${outputPath}`);
 					debugSamples += 1;
 				}
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
 				const statusMatch = message.match(/^HTTP (\d+)/);
-				const status = statusMatch ? statusMatch[1] : "ERR";
-				failures.push({ url, status });
+				const status = statusMatch?.[1] ?? "ERR";
+				failures.push({ url: resolvedUrl, status });
 			}
 		}
 	};
@@ -417,7 +421,11 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 					})`,
 				);
 			}
-			const fetchResult = await fetchLinkedPages(links, includeHostPrefix, debug);
+			const fetchResult = await fetchLinkedPages(
+				links,
+				includeHostPrefix,
+				debug,
+			);
 			pages = fetchResult.pages;
 			fetchFailures = fetchResult.failures;
 			fetchSkipped = fetchResult.skipped;
