@@ -209,12 +209,23 @@ function outputPathForUrl(url: string, includeHostPrefix: boolean): string {
 	}
 }
 
+interface FetchFailure {
+	url: string;
+	status: string;
+}
+
+interface FetchLinkedPagesResult {
+	pages: Page[];
+	failures: FetchFailure[];
+}
+
 async function fetchLinkedPages(
 	urls: string[],
 	includeHostPrefix: boolean,
 	debug?: DebugLogger,
-): Promise<Page[]> {
+): Promise<FetchLinkedPagesResult> {
 	const results: Array<Page | null> = new Array(urls.length).fill(null);
+	const failures: FetchFailure[] = [];
 	const seenPaths = new Set<string>();
 	let cursor = 0;
 	let debugSamples = 0;
@@ -255,7 +266,9 @@ async function fetchLinkedPages(
 				}
 			} catch (error) {
 				const message = error instanceof Error ? error.message : String(error);
-				console.warn(`Warning: failed to fetch ${url} (${message})`);
+				const statusMatch = message.match(/^HTTP (\d+)/);
+				const status = statusMatch ? statusMatch[1] : "ERR";
+				failures.push({ url, status });
 			}
 		}
 	};
@@ -264,7 +277,10 @@ async function fetchLinkedPages(
 	const workers = Array.from({ length: concurrency }, () => worker());
 	await Promise.all(workers);
 
-	return results.filter((page): page is Page => page !== null);
+	return {
+		pages: results.filter((page): page is Page => page !== null),
+		failures,
+	};
 }
 
 export async function splitCommand(options: SplitOptions): Promise<void> {
@@ -377,6 +393,7 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 	let detectedLabel: string = result.pattern;
 	let pages = result.pages;
 	let llmsTxtLinks: string[] | null = null;
+	let fetchFailures: FetchFailure[] = [];
 
 	if (pages.length === 0) {
 		const baseUrl = inputIsUrl ? input : undefined;
@@ -393,7 +410,9 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 					})`,
 				);
 			}
-			pages = await fetchLinkedPages(links, includeHostPrefix, debug);
+			const fetchResult = await fetchLinkedPages(links, includeHostPrefix, debug);
+			pages = fetchResult.pages;
+			fetchFailures = fetchResult.failures;
 		}
 	}
 
@@ -413,11 +432,20 @@ export async function splitCommand(options: SplitOptions): Promise<void> {
 			logLines.push(`  -> Links: ${llmsTxtLinks.length}`);
 		}
 	}
-	let pagesLine = `  -> Pages: ${adjusted.pages.length}`;
-	if (options.debug && adjusted.flattenedRoot) {
-		pagesLine += ` (flattened from "${adjusted.flattenedRoot}/")`;
+	if (llmsTxtLinks) {
+		logLines.push(`  -> Fetched: ${adjusted.pages.length}`);
+		if (fetchFailures.length > 0) {
+			logLines.push(`  -> Failed: ${fetchFailures.length}`);
+			for (const failure of fetchFailures) {
+				logLines.push(`     - ${failure.status} ${failure.url}`);
+			}
+		}
+	} else {
+		logLines.push(`  -> Pages: ${adjusted.pages.length}`);
 	}
-	logLines.push(pagesLine);
+	if (options.debug && adjusted.flattenedRoot) {
+		logLines.push(`     (flattened from "${adjusted.flattenedRoot}/")`);
+	}
 
 	// Write output files
 	for (const page of adjusted.pages) {
