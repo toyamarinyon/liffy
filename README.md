@@ -39,7 +39,21 @@ npx llms-furl --help
 ## Quickstart
 
 ```bash
-llms-furl https://vercel.com/docs/llms-full.txt
+# llms-full.txt (monolithic docs)
+npx llms-furl https://vercel.com/docs/llms-full.txt
+npx llms-furl https://nextjs.org/docs/llms-full.txt
+npx llms-furl https://platform.claude.com/llms-full.txt
+npx llms-furl https://orm.drizzle.team/llms-full.txt
+npx llms-furl https://polar.sh/docs/llms-full.txt
+
+# llms.txt (link lists)
+npx llms-furl https://supabase.com/llms.txt
+npx llms-furl https://cursor.com/llms.txt
+```
+
+Example output:
+
+```bash
 tree -L 3 llms-furl/vercel.com
 ```
 
@@ -116,15 +130,11 @@ llms-furl detects common llms-full formats automatically:
 
 Code blocks are ignored when detecting boundaries.
 
-## llms.txt link lists
+## Supported inputs
 
-If a site only provides `llms.txt`, llms-furl reads every link in the list,
-fetches each page, and writes each one as a leaf file. Relative links are
-resolved against the `llms.txt` URL.
+**`llms-full.txt`** — A monolithic document containing all docs. llms-furl splits it into leaf files along section boundaries.
 
-```bash
-llms-furl https://cursor.com/llms.txt
-```
+**`llms.txt`** — A link list. llms-furl fetches each linked page and writes it as a leaf file. Relative links are resolved against the `llms.txt` URL.
 
 ## Integration hints
 
